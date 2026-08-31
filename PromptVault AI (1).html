@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PromptVault AI | Premium Prompt Library</title>
+    
+    <!-- Google Fonts: Space Grotesk & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons (Premium UI Icons) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Tailwind CSS with Custom Configuration -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        vault: {
+                            bg: '#010308',
+                            surface: '#0a0f1a',
+                            border: 'rgba(255, 255, 255, 0.05)',
+                            primary: '#00e5ff',
+                            secondary: '#8a2be2',
+                            glow: 'rgba(0, 229, 255, 0.4)'
+                        }
+                    },
+                    animation: {
+                        'shimmer': 'shimmer 2s linear infinite',
+                        'float': 'float 8s ease-in-out infinite',
+                        'pulse-glow': 'pulseGlow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        shimmer: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(100%)' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+                            '50%': { transform: 'translateY(-20px) rotate(2deg)' },
+                        },
+                        pulseGlow: {
+                            '0%, 100%': { opacity: 1, filter: 'drop-shadow(0 0 15px rgba(0, 229, 255, 0.6))' },
+                            '50%': { opacity: 0.8, filter: 'drop-shadow(0 0 35px rgba(0, 229, 255, 0.9))' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Import Map for Firebase SDK (Resolves NPM imports in browser) -->
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js",
+                "firebase/database": "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js",
+                "./src/firebase.js": "./src/firebase.js"
+            }
+        }
+    </script>
+
+    <!-- Advanced CSS for 3D Effects, Glassmorphism & Custom Cursor -->
+    <style>
+        :root {
+            --cursor-size: 20px;
+            --primary-gradient: linear-gradient(135deg, #00e5ff 0%, #8a2be2 100%);
+        }
+
+        body {
+            background-color: #010308;
+            color: #f8fafc;
+            overflow-x: hidden;
+            cursor: none; /* Hide default cursor for custom implementation */
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Custom Animated Cursor */
+        .custom-cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--cursor-size);
+            height: var(--cursor-size);
+            border: 2px solid var(--primary-gradient);
+            border-image: var(--primary-gradient) 1;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s, background-color 0.3s;
+            mix-blend-mode: difference;
+        }
+        .custom-cursor-dot {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 6px;
+            background-color: #00e5ff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            transform: translate(-50%, -50%);
+        }
+        body:hover .custom-cursor { opacity: 1; }
+        .cursor-hover {
+            width: 50px !important;
+            height: 50px !important;
+            background-color: rgba(0, 229, 255, 0.1);
+            border-radius: 50%;
+            border-image: none;
+            border-color: #00e5ff;
+        }
+
+        /* Glassmorphism & Depth Utilities */
+        .glass-panel {
+            background: rgba(10, 15, 26, 0.65);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+        }
+        
+        .glass-card {
+            background: linear-gradient(180deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+            transform-style: preserve-3d;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.06), transparent 40%);
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .glass-card:hover::before { opacity: 1; }
+
+        /* Text Gradients */
+        .text-gradient {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Premium Scrollbar */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #010308; }
+        ::-webkit-scrollbar-thumb { 
+            background: #1e293b; 
+            border-radius: 5px; 
+            border: 2px solid #010308;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+        /* Advanced Skeleton Loader */
+        .skeleton-box {
+            position: relative;
+            overflow: hidden;
+            background-color: #111827;
+            border-radius: 12px;
+        }
+        .skeleton-box::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            transform: translateX(-100%);
+            background-image: linear-gradient(90deg, rgba(255,255,255, 0) 0, rgba(255,255,255, 0.05) 20%, rgba(255,255,255, 0.1) 60%, rgba(255,255,255, 0));
+            animation: shimmer 2s infinite;
+        }
+
+        /* Neural Canvas Background */
+        #neural-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -2;
+            opacity: 0.6;
+        }
+        
+        .ambient-glow {
+            position: fixed;
+            width: 800px;
+            height: 800px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,229,255,0.08) 0%, rgba(0,0,0,0) 70%);
+            top: -400px;
+            left: -400px;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .ambient-glow.secondary {
+            background: radial-gradient(circle, rgba(138,43,226,0.08) 0%, rgba(0,0,0,0) 70%);
+            top: auto; left: auto;
+            bottom: -400px; right: -400px;
+        }
+
+        /* Modal & Notifications */
+        .modal-overlay {
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            backdrop-filter: blur(10px);
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            transform: scale(0.95) translateY(20px);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+
+        .toast-notification {
+            transform: translateY(100px) scale(0.9);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        .toast-notification.show {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+
+        /* Scroll Reveal Utility */
+        .reveal-element {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal-element.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* 3D Core Visual in Hero */
+        .hero-orb {
+            width: 300px; height: 300px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, transparent 0%, rgba(0, 229, 255, 0.8) 25%, transparent 50%, rgba(138, 43, 226, 0.8) 75%, transparent 100%);
+            animation: spin 10s linear infinite;
+            filter: blur(20px);
+        }
+        .hero-inner-orb {
+            position: absolute;
+            inset: 20px;
+            background: #010308;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="relative selection:bg-vault-primary selection:text-black">
+
+    <!-- Custom Cursor Setup -->
+    <div class="custom-cursor hidden md:block"></div>
+    <div class="custom-cursor-dot hidden md:block"></div>
+
+    <!-- Interactive Background -->
+    <canvas id="neural-canvas"></canvas>
+    <div class="ambient-glow"></div>
+    <div class="ambient-glow secondary"></div>
+
+    <!-- Application Header -->
+    <header class="fixed top-0 w-full z-50 glass-panel border-b-0 border-white/5 transition-all duration-500" id="main-header">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center justify-between">
+            
+            <!-- Branding -->
+            <div class="flex items-center gap-4 cursor-pointer group interactable" onclick="window.scrollTo(0,0)">
+                <div class="relative w-12 h-12 rounded-2xl bg-[#0f172a] border border-white/10 flex items-center justify-center overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-br from-vault-primary/20 to-vault-secondary/20 group-hover:scale-110 transition-transform duration-500"></div>
+                    <i class="ph-fill ph-brain text-white text-3xl z-10 group-hover:text-vault-primary transition-colors"></i>
+                </div>
+                <h1 class="font-display font-bold text-2xl tracking-tight hidden sm:block">Prompt<span class="text-gradient">Vault</span></h1>
+            </div>
+
+            <!-- Global Search -->
+            <div class="flex-1 max-w-2xl mx-4 lg:mx-12 relative group">
+                <div class="absolute inset-0 bg-gradient-to-r from-vault-primary to-vault-secondary rounded-full blur opacity-20 group-focus-within:opacity-50 transition-opacity duration-300"></div>
+                <div class="relative flex items-center bg-[#0a0f1a] border border-white/10 rounded-full py-1 pr-1 pl-5">
+                    <i class="ph ph-magnifying-glass text-gray-400 text-xl group-focus-within:text-vault-primary transition-colors"></i>
+                    <input type="search" id="searchInput" placeholder="Search AI prompts, tools, or categories..." 
+                        class="w-full bg-transparent border-none py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:ring-0 text-sm sm:text-base interactable">
+                    <button class="bg-white/5 hover:bg-white/10 text-white rounded-full px-6 py-2.5 text-sm font-medium transition-colors border border-white/5 interactable hidden sm:block">
+                        Search
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Connection Indicator (Visual only, no technical terms) -->
+            <div class="hidden lg:flex items-center gap-3 px-4 py-2 rounded-full border border-green-500/20 bg-green-500/10 text-green-400 text-xs font-medium tracking-wide">
+                <span class="relative flex h-2.5 w-2.5">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                </span>
+                Live Sync
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Application Container -->
+    <main class="flex-grow pt-32 pb-24 min-h-screen">
+        
+        <!-- Hero Banner -->
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-24 flex flex-col lg:flex-row items-center justify-between gap-16 relative">
+            <div class="flex-1 space-y-8 z-10 text-center lg:text-left reveal-element visible">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-vault-secondary/30 bg-vault-secondary/10 text-vault-secondary text-sm font-medium backdrop-blur-sm shadow-[0_0_20px_rgba(138,43,226,0.15)]">
+                    <i class="ph-fill ph-sparkle"></i> Next-Gen Prompt Engineering
+                </div>
+                <h2 class="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-display font-extrabold leading-[1.1] tracking-tight">
+                    Unlock the Power <br />
+                    <span class="text-gradient animate-pulse-glow inline-block">of AI Prompts</span>
+                </h2>
+                <p class="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-light">
+                    Discover, copy, and utilize the highest-performing prompts engineered for ChatGPT, Gemini, and next-generation language models.
+                </p>
+                <div class="pt-6 flex flex-wrap gap-5 justify-center lg:justify-start">
+                    <button onclick="document.getElementById('trending').scrollIntoView()" class="interactable px-8 py-4 rounded-full bg-white text-black font-semibold hover:bg-gray-200 hover:scale-105 transition-all shadow-[0_0_30px_rgba(255,255,255,0.3)] flex items-center gap-2 text-lg">
+                        <i class="ph-bold ph-fire"></i> Explore Trending
+                    </button>
+                    <button onclick="document.getElementById('categories').scrollIntoView()" class="interactable px-8 py-4 rounded-full border border-white/20 hover:bg-white/10 hover:border-white/40 transition-all flex items-center gap-2 text-lg text-white">
+                        <i class="ph-bold ph-squares-four"></i> Browse Categories
+                    </button>
+                </div>
+            </div>
+
+            <!-- Hero 3D Graphic -->
+            <div class="flex-1 flex justify-center items-center relative z-10 w-full h-[400px] lg:h-[500px] reveal-element visible" style="transition-delay: 0.2s;">
+                <div class="relative flex items-center justify-center">
+                    <div class="hero-orb"></div>
+                    <div class="hero-inner-orb">
+                        <i class="ph-duotone ph-cpu text-7xl text-white opacity-80 animate-pulse"></i>
+                    </div>
+                    <!-- Orbiting Badges -->
+                    <div class="absolute -top-10 -right-10 glass-panel p-4 rounded-2xl animate-float border-vault-primary/30 text-vault-primary">
+                        <i class="ph-fill ph-code text-2xl"></i>
+                    </div>
+                    <div class="absolute -bottom-10 -left-10 glass-panel p-4 rounded-2xl animate-float border-vault-secondary/30 text-vault-secondary" style="animation-delay: 2s;">
+                        <i class="ph-fill ph-robot text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dynamic Content Area -->
+        <div id="appContainer" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+            
+            <!-- Loading State (Shimmer Effect) -->
+            <div id="loadingState" class="space-y-24 py-10">
+                <div class="space-y-6">
+                    <div class="skeleton-box h-10 w-64 rounded-lg"></div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                        <div class="skeleton-box h-32 rounded-2xl"></div>
+                        <div class="skeleton-box h-32 rounded-2xl"></div>
+                        <div class="skeleton-box h-32 rounded-2xl hidden md:block"></div>
+                        <div class="skeleton-box h-32 rounded-2xl hidden md:block"></div>
+                        <div class="skeleton-box h-32 rounded-2xl hidden lg:block"></div>
+                        <div class="skeleton-box h-32 rounded-2xl hidden lg:block"></div>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    <div class="skeleton-box h-10 w-80 rounded-lg"></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div class="skeleton-box h-80 rounded-3xl"></div>
+                        <div class="skeleton-box h-80 rounded-3xl"></div>
+                        <div class="skeleton-box h-80 rounded-3xl hidden lg:block"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clean Error State (No Technical Jargon) -->
+            <div id="errorState" class="hidden py-32 flex-col items-center justify-center text-center">
+                <div class="glass-panel p-12 rounded-3xl max-w-lg mx-auto border-red-500/20 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
+                    <div class="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="ph-duotone ph-warning-circle text-5xl text-red-400"></i>
+                    </div>
+                    <h3 class="text-3xl font-display font-bold text-white mb-4">Something went wrong.</h3>
+                    <p class="text-gray-400 text-lg mb-8">We are unable to load the content right now. Please try again later.</p>
+                    <button onclick="window.location.reload()" class="interactable bg-white/10 hover:bg-white/20 text-white px-8 py-3 rounded-xl transition-colors">
+                        Refresh Page
+                    </button>
+                </div>
+            </div>
+
+            <!-- Clean Empty State -->
+            <div id="emptyState" class="hidden py-32 flex-col items-center justify-center text-center">
+                <div class="glass-panel p-16 rounded-[40px] max-w-2xl mx-auto border-white/5 relative overflow-hidden text-center flex flex-col items-center">
+                    <div class="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent"></div>
+                    <i class="ph-duotone ph-folder-open text-7xl text-gray-500 mb-6 relative z-10"></i>
+                    <h3 class="text-3xl font-display font-bold text-white mb-4 relative z-10">No content available yet</h3>
+                    <p class="text-gray-400 text-lg relative z-10 max-w-md">The vault is currently empty. Check back soon as we frequently update our collection.</p>
+                </div>
+            </div>
+
+            <!-- Rendered Content Container -->
+            <div id="mainContent" class="hidden space-y-32">
+                
+                <!-- Active Filters Indicator -->
+                <div id="filterActiveState" class="hidden glass-panel p-4 rounded-2xl flex items-center justify-between border-vault-primary/30">
+                    <div class="flex items-center gap-3">
+                        <i class="ph-duotone ph-funnel text-vault-primary text-xl"></i>
+                        <p class="text-white font-medium">Showing results for: <span id="filterText" class="text-vault-primary font-bold"></span></p>
+                    </div>
+                    <button onclick="UI.clearFilters()" class="interactable text-gray-400 hover:text-white flex items-center gap-2 text-sm bg-white/5 px-4 py-2 rounded-lg transition-colors">
+                        <i class="ph ph-x"></i> Clear Filters
+                    </button>
+                </div>
+
+                <!-- Neural Categories -->
+                <section id="categories" class="reveal-element">
+                    <div class="flex items-end justify-between mb-10">
+                        <div>
+                            <h3 class="text-3xl md:text-4xl font-display font-bold flex items-center gap-3 text-white">
+                                <i class="ph-fill ph-squares-four text-vault-primary"></i> Categories
+                            </h3>
+                        </div>
+                    </div>
+                    <div id="categoriesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+                        <!-- Categories injected dynamically -->
+                    </div>
+                </section>
+
+                <!-- Trending Area -->
+                <section id="trending" class="reveal-element">
+                    <div class="flex items-end justify-between mb-10">
+                        <div>
+                            <h3 class="text-3xl md:text-4xl font-display font-bold flex items-center gap-3 text-white">
+                                <i class="ph-fill ph-fire text-orange-500"></i> Trending Prompts
+                            </h3>
+                        </div>
+                    </div>
+                    <div id="trendingGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <!-- Trending injected dynamically -->
+                    </div>
+                </section>
+
+                <!-- Latest Additions -->
+                <section id="latest" class="reveal-element">
+                    <div class="flex items-end justify-between mb-10">
+                        <div>
+                            <h3 class="text-3xl md:text-4xl font-display font-bold flex items-center gap-3 text-white">
+                                <i class="ph-fill ph-clock-counter-clockwise text-vault-secondary"></i> Latest Arrivals
+                            </h3>
+                        </div>
+                    </div>
+                    <div id="latestGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <!-- Latest injected dynamically -->
+                    </div>
+                </section>
+
+                <!-- AI Tools Recommendation -->
+                <section id="tools" class="reveal-element">
+                    <div class="flex items-end justify-between mb-10">
+                        <div>
+                            <h3 class="text-3xl md:text-4xl font-display font-bold flex items-center gap-3 text-white">
+                                <i class="ph-fill ph-wrench text-blue-400"></i> Essential AI Tools
+                            </h3>
+                        </div>
+                    </div>
+                    <div id="toolsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <!-- Tools injected dynamically -->
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Professional Footer -->
+    <footer class="relative mt-20 border-t border-white/10 bg-[#050810] pt-20 pb-10 overflow-hidden z-10">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-[1px] bg-gradient-to-r from-transparent via-vault-primary to-transparent opacity-50"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div class="flex flex-col items-center md:items-start gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-vault-primary/20 flex items-center justify-center">
+                        <i class="ph-fill ph-brain text-vault-primary text-xl"></i>
+                    </div>
+                    <span class="font-display font-bold text-2xl">PromptVault AI</span>
+                </div>
+                <p class="text-gray-500 text-sm max-w-xs text-center md:text-left">Premium prompt library engineered for modern AI models.</p>
+            </div>
+            
+            <div class="flex gap-6">
+                <a href="#" class="w-12 h-12 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-white hover:-translate-y-1 transition-all interactable"><i class="ph-fill ph-twitter-logo text-xl"></i></a>
+                <a href="#" class="w-12 h-12 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-white hover:-translate-y-1 transition-all interactable"><i class="ph-fill ph-github-logo text-xl"></i></a>
+                <a href="#" class="w-12 h-12 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-white hover:-translate-y-1 transition-all interactable"><i class="ph-fill ph-discord-logo text-xl"></i></a>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 mt-16 pt-8 border-t border-white/5 text-center text-gray-600 text-sm">
+            &copy; 2026 PromptVault AI. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Detailed Prompt View Modal -->
+    <div id="promptModal" class="fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-4 sm:p-6">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="UI.closeModal()"></div>
+        <div class="modal-content relative w-full max-w-4xl bg-[#0f172a] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            
+            <!-- Modal Header -->
+            <div class="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-black/20">
+                <h3 id="modalTitle" class="text-2xl font-display font-bold text-white pr-8 line-clamp-1"></h3>
+                <button onclick="UI.closeModal()" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors absolute right-6 top-6 interactable">
+                    <i class="ph ph-x text-xl"></i>
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="p-8 overflow-y-auto custom-scrollbar flex-grow bg-gradient-to-b from-transparent to-black/30">
+                <div class="flex items-center gap-3 mb-6">
+                    <span id="modalCategory" class="px-3 py-1 rounded-md bg-vault-primary/10 text-vault-primary text-sm font-medium border border-vault-primary/20"></span>
+                </div>
+                <p id="modalDesc" class="text-gray-400 mb-8 text-lg"></p>
+                
+                <div class="relative group">
+                    <div class="absolute -inset-1 bg-gradient-to-r from-vault-primary/30 to-vault-secondary/30 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500"></div>
+                    <div class="relative bg-black/50 border border-white/10 rounded-2xl p-6 font-mono text-gray-300 text-sm leading-relaxed whitespace-pre-wrap select-all" id="modalPromptText"></div>
+                </div>
+            </div>
+            
+            <!-- Modal Footer Actions -->
+            <div class="px-8 py-6 border-t border-white/5 bg-[#0a0f1a] flex flex-wrap gap-4 items-center justify-end">
+                <button id="modalBtnGPT" class="interactable px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-white flex items-center gap-2 transition-colors">
+                    <i class="ph-fill ph-chat-circle-dots"></i> Open ChatGPT
+                </button>
+                <button id="modalBtnCopy" class="interactable px-8 py-3 rounded-xl bg-vault-primary hover:bg-[#00cce6] text-black font-bold flex items-center gap-2 transition-colors shadow-[0_0_20px_rgba(0,229,255,0.3)]">
+                    <i class="ph-bold ph-copy"></i> Copy Prompt
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="fixed bottom-8 right-8 z-[110] flex flex-col gap-3"></div>
+
+    <!-- Comprehensive JavaScript Architecture -->
+    <script type="module">
+        // ------------------------------------------------------------------------
+        // 1. APPLICATION STATE
+        // ------------------------------------------------------------------------
+        const AppState = {
+            data: { prompts: [], categories: [], tools: [] },
+            filters: { query: '', category: null },
+            status: { isLoading: true, isError: false },
+            
+            get filteredPrompts() {
+                let result = this.data.prompts;
+                
+                if (this.filters.category) {
+                    result = result.filter(p => p.category === this.filters.category);
+                }
+                
+                if (this.filters.query) {
+                    const q = this.filters.query.toLowerCase();
+                    result = result.filter(p => 
+                        (p.name && p.name.toLowerCase().includes(q)) || 
+                        (p.prompt && p.prompt.toLowerCase().includes(q)) ||
+                        (p.description && p.description.toLowerCase().includes(q))
+                    );
+                }
+                return result;
+            }
+        };
+
+        // ------------------------------------------------------------------------
+        // 2. DATA SYNCHRONIZATION (Strict Firebase Implementation)
+        // ------------------------------------------------------------------------
+        async function startDataSync() {
+            try {
+                // Import user's local connection file
+                const localFirebase = await import('./src/firebase.js');
+                const { db } = localFirebase;
+                
+                // Import Realtime Database methods mapped in importmap
+                const { ref, onValue } = await import('firebase/database');
+
+                // Validating the exports
+                if (!db || !ref || !onValue) {
+                    throw new Error("Invalid export configuration in src/firebase.js");
+                }
+
+                // Establish Realtime listeners targeting the root or specific collections
+                const dbRef = ref(db, '/');
+                
+                onValue(dbRef, (snapshot) => {
+                    const val = snapshot.val();
+                    
+                    if (val) {
+                        // Utility to map Firebase objects to arrays safely
+                        const parseNode = (node) => node ? Object.entries(node).map(([id, data]) => ({ id, ...data })) : [];
+                        
+                        AppState.data.prompts = parseNode(val.prompts);
+                        AppState.data.categories = parseNode(val.categories);
+                        AppState.data.tools = parseNode(val.aiTools);
+                    }
+                    
+                    AppState.status.isLoading = false;
+                    AppState.status.isError = false;
+                    
+                    UI.render();
+                }, (error) => {
+                    // Force jump to catch block without exposing raw error to UI
+                    throw new Error("Sync Failed"); 
+                });
+
+            } catch (err) {
+                // Suppress raw error console logging for production cleanliness
+                AppState.status.isLoading = false;
+                AppState.status.isError = true;
+                UI.render();
+            }
+        }
+
+        // ------------------------------------------------------------------------
+        // 3. UI CONTROLLER (Rendering & DOM Management)
+        // ------------------------------------------------------------------------
+        const UI = {
+            elements: {
+                loading: document.getElementById('loadingState'),
+                error: document.getElementById('errorState'),
+                empty: document.getElementById('emptyState'),
+                main: document.getElementById('mainContent'),
+                catGrid: document.getElementById('categoriesGrid'),
+                trendGrid: document.getElementById('trendingGrid'),
+                latestGrid: document.getElementById('latestGrid'),
+                toolGrid: document.getElementById('toolsGrid'),
+                search: document.getElementById('searchInput'),
+                filterBadge: document.getElementById('filterActiveState'),
+                filterText: document.getElementById('filterText')
+            },
+
+            render() {
+                // State: Error
+                if (AppState.status.isError) {
+                    this.hideAll();
+                    this.elements.error.classList.remove('hidden');
+                    this.elements.error.classList.add('flex');
+                    return;
+                }
+
+                // State: Loading
+                if (AppState.status.isLoading) {
+                    this.hideAll();
+                    this.elements.loading.classList.remove('hidden');
+                    return;
+                }
+
+                // State: Empty
+                if (AppState.data.prompts.length === 0 && AppState.data.categories.length === 0) {
+                    this.hideAll();
+                    this.elements.empty.classList.remove('hidden');
+                    this.elements.empty.classList.add('flex');
+                    return;
+                }
+
+                // State: Success/Loaded
+                this.hideAll();
+                this.elements.main.classList.remove('hidden');
+
+                this.renderFilters();
+                this.renderCategories();
+                this.renderPrompts();
+                this.renderTools();
+                
+                // Re-initialize physics and scroll animations
+                setTimeout(() => {
+                    initTiltPhysics();
+                    processRevealAnimations();
+                }, 50);
+            },
+
+            hideAll() {
+                [this.elements.loading, this.elements.error, this.elements.empty, this.elements.main].forEach(el => {
+                    el.classList.add('hidden');
+                    el.classList.remove('flex');
+                });
+            },
+
+            renderFilters() {
+                if (AppState.filters.query || AppState.filters.category) {
+                    this.elements.filterBadge.classList.remove('hidden');
+                    let txt = '';
+                    if (AppState.filters.query) txt += `"${AppState.filters.query}" `;
+                    if (AppState.filters.category) txt += `in ${AppState.filters.category}`;
+                    this.elements.filterText.innerText = txt.trim();
+                } else {
+                    this.elements.filterBadge.classList.add('hidden');
+                }
+            },
+
+            renderCategories() {
+                if (AppState.data.categories.length === 0) {
+                    this.elements.catGrid.innerHTML = `<p class="text-gray-500 col-span-full">No categories available.</p>`;
+                    return;
+                }
+
+                const html = AppState.data.categories.map(cat => {
+                    const count = AppState.data.prompts.filter(p => p.category === cat.name).length;
+                    const isActive = AppState.filters.category === cat.name;
+                    const activeClasses = isActive 
+                        ? 'border-vault-primary bg-vault-primary/10 shadow-[0_0_15px_rgba(0,229,255,0.2)]' 
+                        : 'border-white/5 hover:border-white/20 bg-white/5';
+                    const textClass = isActive ? 'text-vault-primary' : 'text-white';
+                    const icon = cat.icon || 'ph-duotone ph-folder';
+
+                    return `
+                        <div onclick="UI.setCategory('${cat.name}')" class="interactable rounded-2xl p-6 cursor-pointer flex flex-col items-center justify-center text-center transition-all duration-300 ${activeClasses} group relative overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <i class="${icon} text-3xl ${textClass} mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12 z-10"></i>
+                            <h4 class="font-display font-semibold text-sm md:text-base ${textClass} z-10">${cat.name}</h4>
+                            <div class="mt-3 px-3 py-1 rounded-full bg-black/50 border border-white/5 text-xs text-gray-400 z-10">${count} Prompts</div>
+                        </div>
+                    `;
+                }).join('');
+                this.elements.catGrid.innerHTML = html;
+            },
+
+            renderPrompts() {
+                const prompts = AppState.filteredPrompts;
+                
+                // Segment Trending Prompts
+                const trending = prompts.filter(p => p.trending === true);
+                const trendSection = document.getElementById('trending');
+                
+                if (trending.length > 0) {
+                    trendSection.style.display = 'block';
+                    this.elements.trendGrid.innerHTML = trending.map((p, i) => this.generateCardHtml(p)).join('');
+                } else {
+                    if (AppState.filters.query || AppState.filters.category) {
+                        this.elements.trendGrid.innerHTML = `<p class="text-gray-500 col-span-full">No trending prompts match your filter.</p>`;
+                        trendSection.style.display = 'block';
+                    } else {
+                        trendSection.style.display = 'none';
+                    }
+                }
+
+                // Segment Latest Prompts
+                const latest = [...prompts].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                
+                if (latest.length > 0) {
+                    this.elements.latestGrid.innerHTML = latest.map((p, i) => this.generateCardHtml(p)).join('');
+                } else {
+                    this.elements.latestGrid.innerHTML = `
+                        <div class="col-span-full glass-panel py-20 rounded-3xl text-center border-dashed border-2 border-white/10">
+                            <i class="ph-duotone ph-magnifying-glass text-5xl text-gray-600 mb-4"></i>
+                            <h4 class="text-xl text-white font-medium">No Prompts Found</h4>
+                            <p class="text-gray-500 mt-2">Try adjusting your search criteria.</p>
+                        </div>
+                    `;
+                }
+            },
+
+            generateCardHtml(prompt) {
+                // Stringify data securely for inline click handlers
+                const safeData = JSON.stringify(prompt).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                
+                // Fallback SVG for broken/missing images
+                const fallbackSVG = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMxZTI5M2IiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMwZjE3MmEiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2cpIi8+PHBhdGggZD0iTTMwMCAxMDBBMTUgMTUgMCAwIDAgMjg1IDExNVYxODVBMTUgMTUgMCAwIDAgMzAwIDIwMEExNSAxNSAwIDAgMCAzMTUgMTg1VjExNUExNSAxNSAwIDAgMCAzMDAgMTAwWiIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9zdmc+`;
+                const imgUrl = prompt.image || fallbackSVG;
+
+                return `
+                    <div class="glass-card 3d-tilt-card h-full flex flex-col group cursor-pointer">
+                        <div class="h-48 relative overflow-hidden border-b border-white/10">
+                            <img src="${imgUrl}" onerror="this.src='${fallbackSVG}'" class="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" alt="Cover">
+                            ${prompt.category ? `<span class="absolute top-4 left-4 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 text-xs font-semibold text-white tracking-wide">${prompt.category}</span>` : ''}
+                            
+                            <!-- Interaction Overlay -->
+                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                                <button onclick="UI.openModal('${safeData}')" class="bg-white text-black px-6 py-2.5 rounded-full font-bold text-sm transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.4)] interactable">
+                                    View Details
+                                </button>
+                            </div>
+                        </div>
+                        <div class="p-6 flex flex-col flex-grow relative">
+                            <h4 class="text-xl font-display font-bold text-white mb-3 line-clamp-1 group-hover:text-vault-primary transition-colors">${prompt.name || 'Untitled Prompt'}</h4>
+                            <p class="text-gray-400 text-sm mb-6 line-clamp-2 flex-grow leading-relaxed">${prompt.description || 'No description provided for this prompt.'}</p>
+                            
+                            <div class="flex items-center gap-3 mt-auto">
+                                <button onclick="SystemEngine.copyToClipboard('${(prompt.prompt || '').replace(/'/g, "\\'")}')" class="interactable flex-1 bg-vault-primary/10 hover:bg-vault-primary text-vault-primary hover:text-black border border-vault-primary/30 rounded-xl py-2.5 text-sm font-semibold transition-all flex items-center justify-center gap-2">
+                                    <i class="ph-bold ph-copy"></i> Copy
+                                </button>
+                                <button onclick="window.open('https://chat.openai.com/', '_blank')" class="interactable w-12 h-10 flex items-center justify-center bg-white/5 hover:bg-white/15 border border-white/10 rounded-xl text-gray-300 hover:text-white transition-all" title="Open in ChatGPT">
+                                    <i class="ph-fill ph-chat-circle-dots text-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderTools() {
+                if (AppState.data.tools.length === 0) {
+                    document.getElementById('tools').style.display = 'none';
+                    return;
+                }
+                document.getElementById('tools').style.display = 'block';
+
+                const html = AppState.data.tools.map(tool => {
+                    const fallbackSvg = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzFlMjkzYiIvPjwvc3ZnPg==`;
+                    
+                    return `
+                        <a href="${tool.url || '#'}" target="_blank" class="interactable glass-card p-5 flex items-center gap-4 group 3d-tilt-card hover:border-vault-primary/50 transition-colors">
+                            <div class="w-14 h-14 rounded-2xl overflow-hidden bg-white/5 border border-white/10 flex-shrink-0">
+                                <img src="${tool.image || fallbackSvg}" onerror="this.src='${fallbackSvg}'" class="w-full h-full object-cover group-hover:scale-110 transition-transform">
+                            </div>
+                            <div class="flex-grow">
+                                <h4 class="text-white font-bold group-hover:text-vault-primary transition-colors text-lg">${tool.name}</h4>
+                                <p class="text-xs text-gray-400 mt-1 line-clamp-1">${tool.description || 'AI Engine'}</p>
+                            </div>
+                            <i class="ph ph-caret-right text-gray-500 group-hover:text-vault-primary group-hover:translate-x-1 transition-all"></i>
+                        </a>
+                    `;
+                }).join('');
+                this.elements.toolGrid.innerHTML = html;
+            },
+
+            // Interactivity Binding
+            setCategory(cat) {
+                AppState.filters.category = AppState.filters.category === cat ? null : cat;
+                this.render();
+                document.getElementById('trending').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            },
+
+            clearFilters() {
+                AppState.filters.query = '';
+                AppState.filters.category = null;
+                this.elements.search.value = '';
+                this.render();
+            },
+
+            openModal(dataStr) {
+                const data = JSON.parse(dataStr);
+                document.getElementById('modalTitle').innerText = data.name || 'Prompt Details';
+                document.getElementById('modalCategory').innerText = data.category || 'General';
+                document.getElementById('modalDesc').innerText = data.description || '';
+                document.getElementById('modalPromptText').innerText = data.prompt || '';
+                
+                const copyBtn = document.getElementById('modalBtnCopy');
+                copyBtn.onclick = () => SystemEngine.copyToClipboard(data.prompt);
+                
+                const gptBtn = document.getElementById('modalBtnGPT');
+                gptBtn.onclick = () => window.open('https://chat.openai.com/', '_blank');
+
+                const modal = document.getElementById('promptModal');
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            },
+
+            closeModal() {
+                document.getElementById('promptModal').classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        };
+        window.UI = UI;
+
+        // ------------------------------------------------------------------------
+        // 4. SYSTEM ENGINE (Clipboard & Notifications)
+        // ------------------------------------------------------------------------
+        const SystemEngine = {
+            async copyToClipboard(text) {
+                if (!text) return;
+                try {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(text);
+                    } else {
+                        // Fallback execution for non-secure contexts/iframes
+                        const ta = document.createElement("textarea");
+                        ta.value = text;
+                        ta.style.position = "fixed"; ta.style.opacity = "0";
+                        document.body.appendChild(ta);
+                        ta.select(); document.execCommand('copy');
+                        ta.remove();
+                    }
+                    this.triggerToast('Copied Successfully', 'Ready to paste into your AI model.', 'success');
+                } catch (err) {
+                    this.triggerToast('Copy Failed', 'Please manually copy the text.', 'error');
+                }
+            },
+
+            triggerToast(title, msg, type = 'success') {
+                const container = document.getElementById('toastContainer');
+                const id = 'toast-' + Date.now();
+                
+                const icon = type === 'success' ? 'ph-check-circle text-green-400' : 'ph-warning-circle text-red-400';
+                const bg = type === 'success' ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20';
+
+                const html = `
+                    <div id="${id}" class="toast-notification glass-panel p-4 rounded-2xl flex items-start gap-4 border ${bg} shadow-lg min-w-[300px]">
+                        <i class="ph-fill ${icon} text-2xl mt-0.5"></i>
+                        <div>
+                            <h5 class="text-white font-bold text-sm">${title}</h5>
+                            <p class="text-gray-400 text-xs mt-1">${msg}</p>
+                        </div>
+                        <button onclick="document.getElementById('${id}').remove()" class="ml-auto text-gray-500 hover:text-white">
+                            <i class="ph ph-x"></i>
+                        </button>
+                    </div>
+                `;
+                
+                container.insertAdjacentHTML('beforeend', html);
+                const el = document.getElementById(id);
+                
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => { el.classList.add('show'); });
+                });
+
+                setTimeout(() => {
+                    el.classList.remove('show');
+                    setTimeout(() => el.remove(), 500);
+                }, 4000);
+            }
+        };
+        window.SystemEngine = SystemEngine;
+
+        // Instant Search Filtering
+        UI.elements.search.addEventListener('input', (e) => {
+            AppState.filters.query = e.target.value.trim();
+            UI.render();
+        });
+
+        // ------------------------------------------------------------------------
+        // 5. VISUAL & KINETIC EFFECTS (Canvas, 3D, Custom Cursor)
+        // ------------------------------------------------------------------------
+        
+        // Custom Cursor Logic
+        const cursor = document.querySelector('.custom-cursor');
+        const cursorDot = document.querySelector('.custom-cursor-dot');
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let cursorX = mouseX, cursorY = mouseY;
+        const isTouchDevice = matchMedia('(hover: none)').matches;
+
+        if (!isTouchDevice) {
+            window.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+                cursorDot.style.left = mouseX + 'px';
+                cursorDot.style.top = mouseY + 'px';
+                
+                // Expose coordinates to CSS for dynamic lighting effects
+                document.documentElement.style.setProperty('--mouse-x', `${mouseX}px`);
+                document.documentElement.style.setProperty('--mouse-y', `${mouseY}px`);
+            });
+
+            const renderCursorMovement = () => {
+                cursorX += (mouseX - cursorX) * 0.15;
+                cursorY += (mouseY - cursorY) * 0.15;
+                cursor.style.left = cursorX + 'px';
+                cursor.style.top = cursorY + 'px';
+                requestAnimationFrame(renderCursorMovement);
+            };
+            renderCursorMovement();
+
+            const bindInteractables = () => {
+                document.querySelectorAll('.interactable').forEach(el => {
+                    el.addEventListener('mouseenter', () => cursor.classList.add('cursor-hover'));
+                    el.addEventListener('mouseleave', () => cursor.classList.remove('cursor-hover'));
+                });
+            };
+            new MutationObserver(bindInteractables).observe(document.body, { childList: true, subtree: true });
+        }
+
+        // 3D Tilt Physics for Cards
+        function initTiltPhysics() {
+            if (isTouchDevice) return;
+            document.querySelectorAll('.3d-tilt-card').forEach(card => {
+                card.addEventListener('mousemove', (e) => {
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    
+                    const rotateX = ((y - centerY) / centerY) * -10;
+                    const rotateY = ((x - centerX) / centerX) * 10;
+                    
+                    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+                });
+                
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+                    card.style.transition = 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
+                });
+                
+                card.addEventListener('mouseenter', () => card.style.transition = 'none');
+            });
+        }
+
+        // Scroll Reveal Utility
+        function processRevealAnimations() {
+            const reveals = document.querySelectorAll('.reveal-element:not(.visible)');
+            const windowHeight = window.innerHeight;
+            
+            reveals.forEach(reveal => {
+                if (reveal.getBoundingClientRect().top < windowHeight - 100) {
+                    reveal.classList.add('visible');
+                }
+            });
+        }
+        window.addEventListener('scroll', processRevealAnimations);
+
+        // Header Background Blur on Scroll
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('main-header');
+            if (window.scrollY > 50) {
+                header.classList.add('bg-[#0a0f1a]/80', 'backdrop-blur-xl', 'shadow-2xl');
+                header.classList.remove('bg-transparent');
+            } else {
+                header.classList.remove('bg-[#0a0f1a]/80', 'backdrop-blur-xl', 'shadow-2xl');
+                header.classList.add('bg-transparent');
+            }
+        });
+
+        // Neural Canvas Particle System
+        function initializeNeuralCanvas() {
+            const canvas = document.getElementById('neural-canvas');
+            const ctx = canvas.getContext('2d');
+            let width, height, particles;
+
+            function handleResize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', handleResize);
+            handleResize();
+
+            class NodeParticle {
+                constructor() {
+                    this.x = Math.random() * width;
+                    this.y = Math.random() * height;
+                    this.vx = (Math.random() - 0.5) * 0.5;
+                    this.vy = (Math.random() - 0.5) * 0.5;
+                    this.radius = Math.random() * 1.5 + 0.5;
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    if (this.x < 0 || this.x > width) this.vx *= -1;
+                    if (this.y < 0 || this.y > height) this.vy *= -1;
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(0, 229, 255, 0.5)';
+                    ctx.fill();
+                }
+            }
+
+            function populateNodes() {
+                const count = Math.min(window.innerWidth / 15, 100);
+                particles = Array.from({ length: count }, () => new NodeParticle());
+            }
+            populateNodes();
+
+            function renderFrame() {
+                ctx.clearRect(0, 0, width, height);
+                
+                particles.forEach((p, i) => {
+                    p.update();
+                    p.draw();
+                    
+                    // Mouse interaction lines
+                    if (!isTouchDevice) {
+                        const dx = mouseX - p.x;
+                        const dy = mouseY - p.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < 150) {
+                            ctx.beginPath();
+                            ctx.strokeStyle = `rgba(0, 229, 255, ${0.2 * (1 - dist / 150)})`;
+                            ctx.lineWidth = 1;
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(mouseX, mouseY);
+                            ctx.stroke();
+                        }
+                    }
+
+                    // Node-to-node connections
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const p2 = particles[j];
+                        const dx = p.x - p2.x;
+                        const dy = p.y - p2.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist < 100) {
+                            ctx.beginPath();
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 * (1 - dist / 100)})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
+                        }
+                    }
+                });
+                requestAnimationFrame(renderFrame);
+            }
+            renderFrame();
+        }
+
+        // ------------------------------------------------------------------------
+        // 6. INITIALIZATION PIPELINE
+        // ------------------------------------------------------------------------
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeNeuralCanvas();
+            startDataSync();
+        });
+
+    </script>
+</body>
+</html>
