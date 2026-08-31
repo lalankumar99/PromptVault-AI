@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PromptVault AI | Admin Console</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        vault: {
+                            bg: '#030712',
+                            surface: '#0f172a',
+                            border: 'rgba(255, 255, 255, 0.08)',
+                            primary: '#00e5ff',
+                            secondary: '#8a2be2',
+                        }
+                    },
+                    animation: {
+                        'shimmer': 'shimmer 2s linear infinite',
+                        'spin-slow': 'spin 3s linear infinite',
+                    },
+                    keyframes: {
+                        shimmer: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(100%)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Firebase Import Map -->
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js",
+                "firebase/database": "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js",
+                "firebase/storage": "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js",
+                "./src/firebase.js": "./src/firebase.js"
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #030712;
+            color: #f8fafc;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #030712; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--tw-colors-vault-border);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .glass-input {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .glass-input:focus {
+            background: rgba(15, 23, 42, 0.8);
+            border-color: rgba(0, 229, 255, 0.5);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.1);
+            outline: none;
+        }
+
+        /* Toggle Switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #00e5ff;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #00e5ff;
+        }
+
+        /* Custom File Input */
+        input[type="file"]::file-selector-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 1rem;
+        }
+        input[type="file"]::file-selector-button:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Modals & Toasts */
+        .modal {
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(8px);
+        }
+        .modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-content {
+            transform: scale(0.95) translateY(20px);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+
+        .toast {
+            transform: translateY(100px) scale(0.9);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        .toast.show {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+
+        /* Skeletons */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        /* Nav Link Active State */
+        .nav-link.active {
+            background: linear-gradient(90deg, rgba(0, 229, 255, 0.1) 0%, transparent 100%);
+            border-left-color: #00e5ff;
+            color: white;
+        }
+        .nav-link.active i { color: #00e5ff; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden selection:bg-vault-primary selection:text-black">
+
+    <!-- Global App Loader (Verifying Auth) -->
+    <div id="authLoader" class="fixed inset-0 z-[999] bg-[#030712] flex flex-col items-center justify-center">
+        <div class="w-16 h-16 rounded-2xl bg-vault-surface border border-white/10 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(0,229,255,0.2)]">
+            <i class="ph-duotone ph-shield-check text-vault-primary text-3xl animate-pulse"></i>
+        </div>
+        <h2 class="text-white font-display font-bold text-xl tracking-wide mb-2">Verifying Security Access</h2>
+        <p class="text-gray-500 text-sm">Please wait while we establish a secure connection...</p>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 flex-shrink-0 glass-panel border-r border-t-0 border-b-0 border-l-0 hidden md:flex flex-col relative z-20">
+        <div class="h-20 flex items-center px-6 border-b border-white/5">
+            <div class="flex items-center gap-3">
+                <i class="ph-fill ph-brain text-vault-primary text-2xl"></i>
+                <h1 class="font-display font-bold text-lg tracking-tight">Prompt<span class="text-transparent bg-clip-text bg-gradient-to-r from-vault-primary to-vault-secondary">Vault</span> AI</h1>
+            </div>
+        </div>
+        
+        <nav class="flex-1 py-6 space-y-1 px-3">
+            <button onclick="App.navigate('dashboard')" class="nav-link active w-full flex items-center gap-3 px-3 py-3 rounded-xl border-l-2 border-transparent text-gray-400 hover:text-white hover:bg-white/5 transition-all text-sm font-medium">
+                <i class="ph-duotone ph-squares-four text-xl"></i> Dashboard Overview
+            </button>
+            <button onclick="App.navigate('prompts')" class="nav-link w-full flex items-center gap-3 px-3 py-3 rounded-xl border-l-2 border-transparent text-gray-400 hover:text-white hover:bg-white/5 transition-all text-sm font-medium">
+                <i class="ph-duotone ph-terminal-window text-xl"></i> Prompts Management
+            </button>
+            <button onclick="App.navigate('categories')" class="nav-link w-full flex items-center gap-3 px-3 py-3 rounded-xl border-l-2 border-transparent text-gray-400 hover:text-white hover:bg-white/5 transition-all text-sm font-medium">
+                <i class="ph-duotone ph-folder text-xl"></i> Categories
+            </button>
+            <button onclick="App.navigate('tools')" class="nav-link w-full flex items-center gap-3 px-3 py-3 rounded-xl border-l-2 border-transparent text-gray-400 hover:text-white hover:bg-white/5 transition-all text-sm font-medium">
+                <i class="ph-duotone ph-wrench text-xl"></i> AI Tools
+            </button>
+        </nav>
+
+        <div class="p-6 border-t border-white/5">
+            <button onclick="App.logout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors text-sm font-medium border border-red-500/20">
+                <i class="ph-bold ph-sign-out"></i> Secure Logout
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col h-full relative overflow-hidden">
+        
+        <!-- Mobile Header -->
+        <header class="md:hidden h-16 glass-panel border-b flex items-center justify-between px-4 z-20">
+            <div class="flex items-center gap-2">
+                <i class="ph-fill ph-brain text-vault-primary text-xl"></i>
+                <h1 class="font-display font-bold">PromptVault Admin</h1>
+            </div>
+            <button onclick="App.logout()" class="text-red-400 p-2"><i class="ph-bold ph-sign-out text-xl"></i></button>
+        </header>
+
+        <!-- Dynamic Views Container -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 relative z-10" id="mainContent">
+            
+            <!-- View: Dashboard -->
+            <div id="view-dashboard" class="view-section space-y-8">
+                <div>
+                    <h2 class="text-2xl font-display font-bold text-white">System Overview</h2>
+                    <p class="text-gray-400 text-sm mt-1">Real-time statistics from the data vault.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Stat Card 1 -->
+                    <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-vault-primary/10 rounded-full blur-xl group-hover:bg-vault-primary/20 transition-all"></div>
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-400 text-sm font-medium mb-1">Total Prompts</p>
+                                <h3 class="text-4xl font-display font-bold text-white stat-prompts">0</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-vault-primary/10 flex items-center justify-center text-vault-primary border border-vault-primary/20">
+                                <i class="ph-fill ph-terminal-window text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Stat Card 2 -->
+                    <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-vault-secondary/10 rounded-full blur-xl group-hover:bg-vault-secondary/20 transition-all"></div>
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-400 text-sm font-medium mb-1">Total Categories</p>
+                                <h3 class="text-4xl font-display font-bold text-white stat-categories">0</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-vault-secondary/10 flex items-center justify-center text-vault-secondary border border-vault-secondary/20">
+                                <i class="ph-fill ph-folder text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stat Card 3 -->
+                    <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-orange-500/10 rounded-full blur-xl group-hover:bg-orange-500/20 transition-all"></div>
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-400 text-sm font-medium mb-1">Trending Prompts</p>
+                                <h3 class="text-4xl font-display font-bold text-white stat-trending">0</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400 border border-orange-500/20">
+                                <i class="ph-fill ph-fire text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stat Card 4 -->
+                    <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition-all"></div>
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-400 text-sm font-medium mb-1">AI Tools</p>
+                                <h3 class="text-4xl font-display font-bold text-white stat-tools">0</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20">
+                                <i class="ph-fill ph-wrench text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-8 rounded-2xl flex items-center gap-6 mt-8">
+                    <div class="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center border border-green-500/20 flex-shrink-0">
+                        <i class="ph-fill ph-check-circle text-green-400 text-3xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-bold text-white mb-1">System Health Excellent</h4>
+                        <p class="text-sm text-gray-400">The content management system is fully synchronized and operational. Changes made here will immediately reflect on the public platform.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View: Prompts -->
+            <div id="view-prompts" class="view-section space-y-6 hidden">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-display font-bold text-white">Prompt Management</h2>
+                        <p class="text-gray-400 text-sm mt-1">Add, edit, or remove AI prompts.</p>
+                    </div>
+                    <button onclick="App.openModal('promptModal')" class="bg-vault-primary hover:bg-[#00cce6] text-black px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(0,229,255,0.2)]">
+                        <i class="ph-bold ph-plus"></i> Add New Prompt
+                    </button>
+                </div>
+
+                <!-- Filters -->
+                <div class="glass-panel p-4 rounded-xl flex flex-col md:flex-row gap-4 items-center">
+                    <div class="relative w-full md:w-96">
+                        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="searchPrompts" placeholder="Search prompts..." class="w-full glass-input rounded-lg pl-10 pr-4 py-2 text-sm">
+                    </div>
+                    <select id="filterCategory" class="w-full md:w-auto glass-input rounded-lg px-4 py-2 text-sm appearance-none cursor-pointer">
+                        <option value="">All Categories</option>
+                        <!-- Injected -->
+                    </select>
+                    <div class="flex items-center gap-2 ml-auto">
+                        <span class="text-sm text-gray-400">Trending Only</span>
+                        <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" id="filterTrending" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 border-gray-600 appearance-none cursor-pointer z-10 transition-all"/>
+                            <label for="filterTrending" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"></label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grid -->
+                <div id="promptsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Loading Skeletons -->
+                    <div class="skeleton h-64 rounded-2xl"></div>
+                    <div class="skeleton h-64 rounded-2xl"></div>
+                    <div class="skeleton h-64 rounded-2xl"></div>
+                </div>
+            </div>
+
+            <!-- View: Categories -->
+            <div id="view-categories" class="view-section space-y-6 hidden">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-display font-bold text-white">Categories</h2>
+                        <p class="text-gray-400 text-sm mt-1">Manage structural organization.</p>
+                    </div>
+                    <button onclick="App.openModal('categoryModal')" class="bg-vault-secondary hover:bg-[#7a1ce2] text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(138,43,226,0.3)]">
+                        <i class="ph-bold ph-plus"></i> Add Category
+                    </button>
+                </div>
+
+                <div id="categoriesGrid" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                     <!-- Injected -->
+                </div>
+            </div>
+
+            <!-- View: Tools -->
+            <div id="view-tools" class="view-section space-y-6 hidden">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-display font-bold text-white">AI Tools Directory</h2>
+                        <p class="text-gray-400 text-sm mt-1">Manage recommended platforms.</p>
+                    </div>
+                    <button onclick="App.openModal('toolModal')" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+                        <i class="ph-bold ph-plus"></i> Add Tool
+                    </button>
+                </div>
+
+                <div id="toolsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                     <!-- Injected -->
+                </div>
+            </div>
+            
+            <!-- Mobile Bottom Nav -->
+            <nav class="md:hidden fixed bottom-0 left-0 w-full glass-panel border-t flex justify-around p-3 z-50">
+                <button onclick="App.navigate('dashboard')" class="flex flex-col items-center gap-1 text-gray-400 hover:text-vault-primary"><i class="ph-fill ph-squares-four text-2xl"></i><span class="text-[10px]">Stats</span></button>
+                <button onclick="App.navigate('prompts')" class="flex flex-col items-center gap-1 text-gray-400 hover:text-vault-primary"><i class="ph-fill ph-terminal-window text-2xl"></i><span class="text-[10px]">Prompts</span></button>
+                <button onclick="App.navigate('categories')" class="flex flex-col items-center gap-1 text-gray-400 hover:text-vault-primary"><i class="ph-fill ph-folder text-2xl"></i><span class="text-[10px]">Categories</span></button>
+                <button onclick="App.navigate('tools')" class="flex flex-col items-center gap-1 text-gray-400 hover:text-vault-primary"><i class="ph-fill ph-wrench text-2xl"></i><span class="text-[10px]">Tools</span></button>
+            </nav>
+
+        </div>
+    </main>
+
+    <!-- Modals Overlay -->
+    <div id="modalOverlay" class="fixed inset-0 bg-black/80 z-[100] modal flex items-center justify-center p-4">
+        
+        <!-- Prompt Modal -->
+        <div id="promptModal" class="modal-content w-full max-w-2xl glass-panel rounded-2xl hidden flex-col max-h-[90vh] overflow-hidden">
+            <div class="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-black/20">
+                <h3 class="text-lg font-bold text-white" id="promptModalTitle">Add New Prompt</h3>
+                <button onclick="App.closeModals()" class="text-gray-400 hover:text-white"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scrollbar">
+                <form id="promptForm" class="space-y-5">
+                    <input type="hidden" id="promptId">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-semibold text-gray-400">Prompt Name *</label>
+                            <input type="text" id="promptName" required class="w-full glass-input rounded-lg px-4 py-2.5 text-sm" placeholder="e.g. Master Developer">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-semibold text-gray-400">Category *</label>
+                            <select id="promptCategory" required class="w-full glass-input rounded-lg px-4 py-2.5 text-sm appearance-none">
+                                <!-- Injected -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-gray-400">Cover Image</label>
+                        <div class="flex gap-4 items-center">
+                            <input type="file" id="promptImageFile" accept="image/*" class="w-full text-sm text-gray-400">
+                            <span class="text-gray-500 text-sm font-bold">OR</span>
+                            <input type="url" id="promptImageUrl" class="w-full glass-input rounded-lg px-4 py-2.5 text-sm" placeholder="Paste Image URL">
+                        </div>
+                        <!-- Upload Progress -->
+                        <div id="promptUploadProgress" class="hidden h-1.5 w-full bg-white/10 rounded-full overflow-hidden mt-2">
+                            <div class="h-full bg-vault-primary w-0 transition-all duration-300" id="promptUploadBar"></div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-gray-400">Short Description</label>
+                        <input type="text" id="promptDesc" class="w-full glass-input rounded-lg px-4 py-2.5 text-sm" placeholder="Brief context about the prompt">
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-gray-400">Full Prompt Content *</label>
+                        <textarea id="promptContent" required rows="6" class="w-full glass-input rounded-lg px-4 py-2.5 text-sm font-mono resize-none" placeholder="Act as a..."></textarea>
+                    </div>
+
+                    <div class="flex items-center gap-3 bg-white/5 p-4 rounded-xl border border-white/5">
+                        <div class="relative inline-block w-10 align-middle select-none">
+                            <input type="checkbox" id="promptTrending" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 border-gray-600 appearance-none cursor-pointer z-10 transition-all"/>
+                            <label for="promptTrending" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"></label>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-white">Mark as Trending</p>
+                            <p class="text-xs text-gray-500">Will display prominently on the public homepage.</p>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="px-6 py-4 border-t border-white/5 bg-black/20 flex justify-end gap-3">
+                <button onclick="App.closeModals()" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white text-sm font-medium transition-colors">Cancel</button>
+                <button onclick="App.savePrompt()" id="savePromptBtn" class="bg-vault-primary hover:bg-[#00cce6] text-black px-6 py-2 rounded-lg text-sm font-bold transition-all shadow-[0_0_15px_rgba(0,229,255,0.2)] flex items-center gap-2">
+                    Save Details
+                </button>
+            </div>
+        </div>
+
+        <!-- Category Modal -->
+        <div id="categoryModal" class="modal-content w-full max-w-md glass-panel rounded-2xl hidden flex-col">
+            <div class="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-black/20">
+                <h3 class="text-lg font-bold text-white" id="catModalTitle">Add Category</h3>
+                <button onclick="App.closeModals()" class="text-gray-400 hover:text-white"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-5">
+                <input type="hidden" id="catId">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-gray-400">Category Name *</label>
+                    <input type="text" id="catName" class="w-full glass-input rounded-lg px-4 py-2.5 text-sm" placeholder="e.g. Development">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-gray-400">Phosphor Icon Class (Optional)</label>
+                    <input type="text" id="catIcon" class="w-full glass-input rounded-lg px-4 py-2.5 text-sm" placeholder="e.g. ph-duotone ph-code">
+                    <p class="text-[10px] text-gray-500">Find icons at phosphoricons.com</p>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-white/5 bg-black/20 flex justify-end gap-3">
+                <button onclick="App.closeModals()" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white text-sm font-medium">Cancel</button>
+                <button onclick="App.saveCategory()" id="saveCatBtn" class="bg-vault-secondary hover:bg-[#7a1ce2] text-white px-6 py-2 rounded-lg text-sm font-bold transition-all shadow-[0_0_15px_rgba(138,43,226,0.3)] flex items-center gap-2">
+                    Save Category
+                </button>
+            </div>
+        </div>
+
+        <!-- Tool Modal -->
+        <div id="toolModal" class="modal-content w-full max-w-md glass-panel rounded-2xl hidden flex-col">
+            <div class="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-black/20">
+                <h3 class="text-lg font-bold text-white" id="toolModalTitle">Add AI Tool</h3>
+                <button onclick="App.closeModals()" class="text-gray-400 hover:text-white"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="toolId">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-gray-400">Tool Name *</label>
+                    <input type="text" id="toolName" class="w-full glass-input rounded-lg px-4 py-2.5 text-sm" placeholder="e.g. ChatGPT">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-gray-400">Website URL *</label>
+                    <input type="url" id="toolUrl" class="w-full glass-input rounded-lg px-4 py-2.5 text-sm" placeholder="https://...">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-gray-400">Image/Icon URL</label>
+                    <input type="url" id="toolImg" class="w-full glass-input rounded-lg px-4 py-2.5 text-sm" placeholder="Optional image URL">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-gray-400">Description</label>
+                    <input type="text" id="toolDesc" class="w-full glass-input rounded-lg px-4 py-2.5 text-sm" placeholder="Short description">
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-white/5 bg-black/20 flex justify-end gap-3">
+                <button onclick="App.closeModals()" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white text-sm font-medium">Cancel</button>
+                <button onclick="App.saveTool()" id="saveToolBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-bold transition-all shadow-[0_0_15px_rgba(59,130,246,0.3)] flex items-center gap-2">
+                    Save Tool
+                </button>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div id="deleteModal" class="modal-content w-full max-w-sm glass-panel border-red-500/30 rounded-2xl hidden flex-col text-center">
+            <div class="p-8">
+                <div class="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4 border border-red-500/20">
+                    <i class="ph-duotone ph-warning text-3xl text-red-500"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2">Confirm Deletion</h3>
+                <p class="text-sm text-gray-400">This action cannot be undone. Are you sure you want to permanently remove this item?</p>
+            </div>
+            <div class="px-6 py-4 border-t border-white/5 bg-black/20 flex justify-center gap-3">
+                <button onclick="App.closeModals()" class="px-6 py-2 rounded-lg text-gray-400 hover:text-white text-sm font-medium bg-white/5 hover:bg-white/10 transition-colors border border-white/5">Cancel</button>
+                <button onclick="App.executeDelete()" id="confirmDeleteBtn" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg text-sm font-bold transition-all shadow-[0_0_15px_rgba(239,68,68,0.3)]">
+                    Yes, Delete
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-[200] flex flex-col gap-3 pointer-events-none"></div>
+
+    <!-- System Logic -->
+    <script type="module">
+        let auth, db, storage, onAuthStateChanged, signOut, dbRef, onValue, set, push, update, remove, storageRef, uploadBytesResumable, getDownloadURL, deleteObject;
+
+        // Central State Management
+        const State = {
+            currentTab: 'dashboard',
+            prompts: [],
+            categories: [],
+            tools: [],
+            itemToDelete: null // { path: string, imagePath: string|null }
+        };
+
+        // DOM Elements Map
+        const DOM = {
+            authLoader: document.getElementById('authLoader'),
+            views: document.querySelectorAll('.view-section'),
+            navLinks: document.querySelectorAll('.nav-link'),
+            modalOverlay: document.getElementById('modalOverlay'),
+            modals: document.querySelectorAll('.modal-content'),
+            toastContainer: document.getElementById('toastContainer')
+        };
+
+        // ---------------------------------------------------------
+        // 1. INITIALIZATION & SECURITY
+        // ---------------------------------------------------------
+        async function bootstrap() {
+            try {
+                // Import Firebase modules
+                const fbAuth = await import('firebase/auth');
+                const fbDb = await import('firebase/database');
+                const fbStorage = await import('firebase/storage');
+                const localApp = await import('./src/firebase.js');
+
+                // Extract methods safely
+                auth = localApp.auth; db = localApp.db; storage = localApp.storage;
+                onAuthStateChanged = fbAuth.onAuthStateChanged; signOut = fbAuth.signOut;
+                dbRef = fbDb.ref; onValue = fbDb.onValue; set = fbDb.set; push = fbDb.push; update = fbDb.update; remove = fbDb.remove;
+                storageRef = fbStorage.ref; uploadBytesResumable = fbStorage.uploadBytesResumable; getDownloadURL = fbStorage.getDownloadURL; deleteObject = fbStorage.deleteObject;
+
+                if(!auth || !db) throw new Error("Database Connection Issue");
+
+                // Security Enforcement
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        // Authenticated. Initialize Data Sync.
+                        DOM.authLoader.style.opacity = '0';
+                        setTimeout(() => DOM.authLoader.style.display = 'none', 300);
+                        startDataSync();
+                    } else {
+                        // Not authenticated. Eject immediately.
+                        window.location.href = 'admin-login.html';
+                    }
+                });
+
+            } catch (error) {
+                console.error("Boot failure:", error);
+                showToast("Something went wrong establishing a secure connection.", "error");
+            }
+        }
+
+        // ---------------------------------------------------------
+        // 2. DATA SYNCHRONIZATION (Realtime DB)
+        // ---------------------------------------------------------
+        function startDataSync() {
+            // Prompts listener
+            onValue(dbRef(db, 'prompts'), (snap) => {
+                const data = snap.val();
+                State.prompts = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
+                updateUI();
+            });
+
+            // Categories listener
+            onValue(dbRef(db, 'categories'), (snap) => {
+                const data = snap.val();
+                State.categories = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
+                updateCategorySelects();
+                updateUI();
+            });
+
+            // AI Tools listener
+            onValue(dbRef(db, 'aiTools'), (snap) => {
+                const data = snap.val();
+                State.tools = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
+                updateUI();
+            });
+        }
+
+        // ---------------------------------------------------------
+        // 3. UI RENDERING ENGINE
+        // ---------------------------------------------------------
+        function updateUI() {
+            renderDashboardStats();
+            if (State.currentTab === 'prompts') renderPrompts();
+            if (State.currentTab === 'categories') renderCategories();
+            if (State.currentTab === 'tools') renderTools();
+        }
+
+        function renderDashboardStats() {
+            document.querySelector('.stat-prompts').textContent = State.prompts.length;
+            document.querySelector('.stat-categories').textContent = State.categories.length;
+            document.querySelector('.stat-trending').textContent = State.prompts.filter(p => p.trending).length;
+            document.querySelector('.stat-tools').textContent = State.tools.length;
+        }
+
+        function updateCategorySelects() {
+            const selectHtml = `<option value="">Select Category...</option>` + 
+                State.categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            
+            document.getElementById('promptCategory').innerHTML = selectHtml;
+            
+            // Search Filter variant
+            document.getElementById('filterCategory').innerHTML = `<option value="">All Categories</option>` + 
+                State.categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        }
+
+        function renderPrompts() {
+            const container = document.getElementById('promptsGrid');
+            const search = document.getElementById('searchPrompts').value.toLowerCase();
+            const catFilter = document.getElementById('filterCategory').value;
+            const trendFilter = document.getElementById('filterTrending').checked;
+
+            let filtered = State.prompts;
+
+            if (search) filtered = filtered.filter(p => (p.name||'').toLowerCase().includes(search));
+            if (catFilter) filtered = filtered.filter(p => p.category === catFilter);
+            if (trendFilter) filtered = filtered.filter(p => p.trending === true);
+
+            // Sort newest first
+            filtered.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="col-span-full py-12 flex flex-col items-center justify-center glass-panel rounded-2xl border-dashed">
+                    <i class="ph-duotone ph-folder-open text-4xl text-gray-600 mb-3"></i>
+                    <p class="text-gray-400">No prompts found matching criteria.</p>
+                </div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(p => {
+                const img = p.image || `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMWUyOTNiIi8+PC9zdmc+`;
+                const safeData = JSON.stringify(p).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                
+                return `
+                <div class="glass-panel rounded-2xl overflow-hidden flex flex-col relative group">
+                    <div class="h-32 overflow-hidden relative border-b border-white/5">
+                        <img src="${img}" class="w-full h-full object-cover opacity-80" onerror="this.src=''">
+                        ${p.trending ? `<div class="absolute top-2 right-2 bg-orange-500/90 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg flex items-center gap-1 backdrop-blur-sm"><i class="ph-bold ph-fire"></i> TRENDING</div>` : ''}
+                    </div>
+                    <div class="p-5 flex-1 flex flex-col">
+                        <h4 class="text-white font-bold mb-1 line-clamp-1">${p.name}</h4>
+                        <p class="text-xs text-vault-primary mb-3">${p.category || 'Uncategorized'}</p>
+                        
+                        <div class="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-gray-500">Trending</span>
+                                <div class="relative inline-block w-8 align-middle select-none">
+                                    <input type="checkbox" ${p.trending ? 'checked' : ''} onchange="App.toggleTrending('${p.id}', this.checked)" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-4 border-gray-600 appearance-none cursor-pointer z-10"/>
+                                    <label class="toggle-label block overflow-hidden h-4 rounded-full bg-gray-600 cursor-pointer"></label>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="App.editPrompt('${safeData}')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors" title="Edit"><i class="ph ph-pencil-simple"></i></button>
+                                <button onclick="App.confirmDelete('prompts/${p.id}', '${p.storagePath || ''}')" class="w-8 h-8 rounded-lg bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center text-red-400 hover:text-red-300 transition-colors" title="Delete"><i class="ph ph-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderCategories() {
+            const container = document.getElementById('categoriesGrid');
+            if(State.categories.length === 0){
+                container.innerHTML = `<div class="col-span-full py-10 text-center text-gray-500">No categories created yet.</div>`; return;
+            }
+            container.innerHTML = State.categories.map(c => {
+                const count = State.prompts.filter(p => p.category === c.name).length;
+                const safeData = JSON.stringify(c).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                return `
+                <div class="glass-panel p-5 rounded-2xl flex flex-col items-center text-center relative group">
+                    <div class="w-12 h-12 rounded-xl bg-vault-secondary/10 text-vault-secondary flex items-center justify-center text-2xl mb-3 border border-vault-secondary/20">
+                        <i class="${c.icon || 'ph-duotone ph-folder'}"></i>
+                    </div>
+                    <h4 class="text-white font-bold mb-1">${c.name}</h4>
+                    <p class="text-xs text-gray-500 bg-black/30 px-2 py-0.5 rounded-full">${count} Prompts</p>
+                    
+                    <div class="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="App.editCategory('${safeData}')" class="w-7 h-7 rounded-md bg-white/10 text-gray-300 hover:text-white flex items-center justify-center"><i class="ph ph-pencil-simple text-xs"></i></button>
+                        <button onclick="App.confirmDelete('categories/${c.id}')" class="w-7 h-7 rounded-md bg-red-500/20 text-red-400 hover:text-red-300 flex items-center justify-center"><i class="ph ph-trash text-xs"></i></button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderTools() {
+            const container = document.getElementById('toolsGrid');
+            if(State.tools.length === 0){
+                container.innerHTML = `<div class="col-span-full py-10 text-center text-gray-500">No tools added yet.</div>`; return;
+            }
+            container.innerHTML = State.tools.map(t => {
+                const safeData = JSON.stringify(t).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                const fallbackSvg = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzFlMjkzYiIvPjwvc3ZnPg==`;
+                return `
+                <div class="glass-panel p-5 rounded-2xl flex items-center gap-4 relative group">
+                    <img src="${t.image || fallbackSvg}" class="w-12 h-12 rounded-xl object-cover bg-white/5" onerror="this.src='${fallbackSvg}'">
+                    <div class="flex-1">
+                        <h4 class="text-white font-bold">${t.name}</h4>
+                        <p class="text-xs text-blue-400 truncate max-w-[150px]">${t.url || 'No URL'}</p>
+                    </div>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="App.editTool('${safeData}')" class="w-8 h-8 rounded-lg bg-white/5 text-gray-400 hover:text-white flex items-center justify-center"><i class="ph ph-pencil-simple"></i></button>
+                        <button onclick="App.confirmDelete('aiTools/${t.id}')" class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 hover:text-red-300 flex items-center justify-center"><i class="ph ph-trash"></i></button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // Attach listeners for live filtering
+        document.getElementById('searchPrompts').addEventListener('input', renderPrompts);
+        document.getElementById('filterCategory').addEventListener('change', renderPrompts);
+        document.getElementById('filterTrending').addEventListener('change', renderPrompts);
+
+        // ---------------------------------------------------------
+        // 4. ACTION CONTROLLERS (Add/Edit/Delete/Upload)
+        // ---------------------------------------------------------
+        
+        async function uploadImage(file, path) {
+            return new Promise((resolve, reject) => {
+                const bar = document.getElementById('promptUploadBar');
+                document.getElementById('promptUploadProgress').classList.remove('hidden');
+                
+                const fileRef = storageRef(storage, `${path}/${Date.now()}_${file.name}`);
+                const task = uploadBytesResumable(fileRef, file);
+
+                task.on('state_changed', 
+                    (snap) => {
+                        const progress = (snap.bytesTransferred / snap.totalBytes) * 100;
+                        bar.style.width = progress + '%';
+                    }, 
+                    (error) => {
+                        console.error(error);
+                        reject(error);
+                    }, 
+                    async () => {
+                        const url = await getDownloadURL(task.snapshot.ref);
+                        setTimeout(() => { document.getElementById('promptUploadProgress').classList.add('hidden'); bar.style.width='0'; }, 500);
+                        resolve({ url, storagePath: task.snapshot.ref.fullPath });
+                    }
+                );
+            });
+        }
+
+        const App = {
+            // Navigation
+            navigate(tabId) {
+                State.currentTab = tabId;
+                DOM.views.forEach(v => v.classList.add('hidden'));
+                document.getElementById(`view-${tabId}`).classList.remove('hidden');
+                
+                DOM.navLinks.forEach(l => l.classList.remove('active'));
+                event?.currentTarget?.classList?.add('active');
+                
+                updateUI();
+            },
+
+            // Modals Logic
+            openModal(modalId) {
+                DOM.modalOverlay.classList.add('active');
+                DOM.modals.forEach(m => m.classList.add('hidden'));
+                document.getElementById(modalId).classList.remove('hidden');
+                document.getElementById(modalId).classList.add('flex');
+                
+                // Clear forms if opening fresh (no ID present usually means Add)
+                if(modalId === 'promptModal' && !document.getElementById('promptId').value) document.getElementById('promptForm').reset();
+            },
+
+            closeModals() {
+                DOM.modalOverlay.classList.remove('active');
+                // Reset hidden IDs on close so next open is clean
+                document.getElementById('promptId').value = '';
+                document.getElementById('catId').value = '';
+                document.getElementById('toolId').value = '';
+            },
+
+            // PROMPTS
+            async savePrompt() {
+                const btn = document.getElementById('savePromptBtn');
+                btn.innerHTML = '<i class="ph-duotone ph-spinner-gap animate-spin"></i> Saving...';
+                btn.disabled = true;
+
+                try {
+                    const id = document.getElementById('promptId').value;
+                    const fileInput = document.getElementById('promptImageFile');
+                    let imageUrl = document.getElementById('promptImageUrl').value;
+                    let storagePath = null;
+
+                    // Form Validation
+                    const name = document.getElementById('promptName').value.trim();
+                    const category = document.getElementById('promptCategory').value;
+                    const promptText = document.getElementById('promptContent').value.trim();
+                    if(!name || !category || !promptText) throw new Error("Please fill all required fields.");
+
+                    // Handle File Upload if exists
+                    if (fileInput.files.length > 0 && storage) {
+                        const uploadRes = await uploadImage(fileInput.files[0], 'prompts');
+                        imageUrl = uploadRes.url;
+                        storagePath = uploadRes.storagePath;
+                    }
+
+                    const data = {
+                        name, category, prompt: promptText,
+                        description: document.getElementById('promptDesc').value.trim(),
+                        image: imageUrl,
+                        storagePath: storagePath || (id ? State.prompts.find(p=>p.id===id)?.storagePath : null),
+                        trending: document.getElementById('promptTrending').checked,
+                        updatedAt: Date.now()
+                    };
+
+                    if (!id) data.createdAt = Date.now();
+
+                    const itemRef = id ? dbRef(db, `prompts/${id}`) : push(dbRef(db, 'prompts'));
+                    await (id ? update(itemRef, data) : set(itemRef, data));
+
+                    showToast("Prompt saved successfully!");
+                    this.closeModals();
+                } catch (error) {
+                    showToast(error.message || "Something went wrong. Please try again.", "error");
+                } finally {
+                    btn.innerHTML = 'Save Details';
+                    btn.disabled = false;
+                }
+            },
+
+            editPrompt(dataStr) {
+                const data = JSON.parse(dataStr);
+                document.getElementById('promptModalTitle').innerText = "Edit Prompt";
+                document.getElementById('promptId').value = data.id;
+                document.getElementById('promptName').value = data.name || '';
+                document.getElementById('promptCategory').value = data.category || '';
+                document.getElementById('promptDesc').value = data.description || '';
+                document.getElementById('promptContent').value = data.prompt || '';
+                document.getElementById('promptImageUrl').value = data.image || '';
+                document.getElementById('promptTrending').checked = data.trending || false;
+                document.getElementById('promptImageFile').value = ''; // Reset file input
+                this.openModal('promptModal');
+            },
+
+            async toggleTrending(id, isTrending) {
+                try {
+                    await update(dbRef(db, `prompts/${id}`), { trending: isTrending });
+                    showToast(isTrending ? "Added to Trending" : "Removed from Trending");
+                } catch (err) {
+                    showToast("Something went wrong. Please try again.", "error");
+                    updateUI(); // Revert toggle visually
+                }
+            },
+
+            // CATEGORIES
+            async saveCategory() {
+                const id = document.getElementById('catId').value;
+                const name = document.getElementById('catName').value.trim();
+                const icon = document.getElementById('catIcon').value.trim();
+
+                if(!name) { showToast("Category name required", "error"); return; }
+
+                try {
+                    const data = { name, icon, updatedAt: Date.now() };
+                    const itemRef = id ? dbRef(db, `categories/${id}`) : push(dbRef(db, 'categories'));
+                    await (id ? update(itemRef, data) : set(itemRef, data));
+                    showToast("Category saved!");
+                    this.closeModals();
+                } catch(e) { showToast("Something went wrong.", "error"); }
+            },
+
+            editCategory(dataStr) {
+                const data = JSON.parse(dataStr);
+                document.getElementById('catModalTitle').innerText = "Edit Category";
+                document.getElementById('catId').value = data.id;
+                document.getElementById('catName').value = data.name || '';
+                document.getElementById('catIcon').value = data.icon || '';
+                this.openModal('categoryModal');
+            },
+
+            // AI TOOLS
+            async saveTool() {
+                const id = document.getElementById('toolId').value;
+                const name = document.getElementById('toolName').value.trim();
+                const url = document.getElementById('toolUrl').value.trim();
+
+                if(!name || !url) { showToast("Name and URL are required", "error"); return; }
+
+                try {
+                    const data = { 
+                        name, url, 
+                        image: document.getElementById('toolImg').value.trim(),
+                        description: document.getElementById('toolDesc').value.trim(),
+                        updatedAt: Date.now() 
+                    };
+                    const itemRef = id ? dbRef(db, `aiTools/${id}`) : push(dbRef(db, 'aiTools'));
+                    await (id ? update(itemRef, data) : set(itemRef, data));
+                    showToast("Tool saved!");
+                    this.closeModals();
+                } catch(e) { showToast("Something went wrong.", "error"); }
+            },
+
+            editTool(dataStr) {
+                const data = JSON.parse(dataStr);
+                document.getElementById('toolModalTitle').innerText = "Edit AI Tool";
+                document.getElementById('toolId').value = data.id;
+                document.getElementById('toolName').value = data.name || '';
+                document.getElementById('toolUrl').value = data.url || '';
+                document.getElementById('toolImg').value = data.image || '';
+                document.getElementById('toolDesc').value = data.description || '';
+                this.openModal('toolModal');
+            },
+
+            // DELETION LOGIC
+            confirmDelete(path, imageStoragePath = null) {
+                State.itemToDelete = { path, imageStoragePath };
+                this.openModal('deleteModal');
+            },
+
+            async executeDelete() {
+                const btn = document.getElementById('confirmDeleteBtn');
+                btn.innerHTML = '<i class="ph-duotone ph-spinner-gap animate-spin"></i>';
+                btn.disabled = true;
+
+                try {
+                    if(!State.itemToDelete) throw new Error("Invalid operation");
+                    
+                    // 1. Remove from RTDB
+                    await remove(dbRef(db, State.itemToDelete.path));
+                    
+                    // 2. Remove associated image from Storage if exists
+                    if(State.itemToDelete.imageStoragePath && storage) {
+                        try {
+                            await deleteObject(storageRef(storage, State.itemToDelete.imageStoragePath));
+                        } catch (storageErr) {
+                            console.warn("Could not delete image, but DB record removed."); // Non-blocking
+                        }
+                    }
+
+                    showToast("Item deleted successfully");
+                    this.closeModals();
+                } catch(err) {
+                    showToast("Something went wrong. Please try again.", "error");
+                } finally {
+                    btn.innerHTML = 'Yes, Delete';
+                    btn.disabled = false;
+                    State.itemToDelete = null;
+                }
+            },
+
+            // Auth
+            async logout() {
+                try {
+                    await signOut(auth);
+                    // onAuthStateChanged will handle the redirect
+                } catch(e) {
+                    showToast("Logout failed.", "error");
+                }
+            }
+        };
+        window.App = App;
+
+        // ---------------------------------------------------------
+        // 5. UTILITIES (Toasts)
+        // ---------------------------------------------------------
+        function showToast(msg, type = 'success') {
+            const id = 'toast-' + Date.now();
+            const icon = type === 'success' ? 'ph-check-circle text-green-400' : 'ph-warning-circle text-red-400';
+            const bg = type === 'success' ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20';
+
+            const html = `
+                <div id="${id}" class="toast glass-panel p-4 rounded-xl flex items-center gap-3 border ${bg} shadow-lg pointer-events-auto">
+                    <i class="ph-fill ${icon} text-xl flex-shrink-0"></i>
+                    <p class="text-white text-sm font-medium">${msg}</p>
+                </div>
+            `;
+            
+            DOM.toastContainer.insertAdjacentHTML('beforeend', html);
+            const el = document.getElementById(id);
+            
+            requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+
+            setTimeout(() => {
+                el.classList.remove('show');
+                setTimeout(() => el.remove(), 400);
+            }, 3000);
+        }
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', bootstrap);
+
+    </script>
+</body>
+</html>
