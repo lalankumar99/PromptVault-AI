@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PromptVault AI | Admin Login</title>
+    
+    <!-- Google Fonts: Space Grotesk & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Tailwind CSS Custom Configuration -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        vault: {
+                            bg: '#010308',
+                            primary: '#00e5ff',
+                            secondary: '#8a2be2',
+                        }
+                    },
+                    animation: {
+                        'float': 'float 8s ease-in-out infinite',
+                        'float-delayed': 'float 8s ease-in-out 4s infinite',
+                        'spin-slow': 'spin 8s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Import Map for Firebase SDK -->
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js",
+                "./src/firebase.js": "./src/firebase.js"
+            }
+        }
+    </script>
+
+    <!-- Advanced CSS Customization -->
+    <style>
+        body {
+            background-color: #010308;
+            color: #f8fafc;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Glassmorphism Classes */
+        .glass-panel {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 229, 255, 0.1);
+        }
+
+        /* Text Gradients */
+        .text-gradient {
+            background: linear-gradient(135deg, #00e5ff 0%, #8a2be2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Custom Input Autofill Override (Prevents white background in Chrome/Safari) */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active{
+            -webkit-box-shadow: 0 0 0 30px #0a0f1a inset !important;
+            -webkit-text-fill-color: white !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        /* Entrance Animation */
+        .entrance-anim {
+            animation: slideUpFade 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(40px) scale(0.95);
+        }
+
+        @keyframes slideUpFade {
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Ambient Background Glows */
+        .ambient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            z-index: -1;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        /* Error Notification & Shake Animation */
+        .error-shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+            40%, 60% { transform: translate3d(8px, 0, 0); }
+        }
+
+        .error-notification {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .error-notification.active {
+            max-height: 100px;
+            opacity: 1;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Button Loading Spinner */
+        .loader {
+            border: 2px solid rgba(0, 0, 0, 0.2);
+            border-top-color: #000;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        
+        .btn-loading .loader { display: inline-block; }
+        .btn-loading .btn-text { display: none; }
+    </style>
+</head>
+<body class="relative min-h-screen flex items-center justify-center selection:bg-vault-primary selection:text-black">
+
+    <!-- 3D Ambient Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <!-- Grid Pattern -->
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_70%)]"></div>
+        
+        <!-- Glowing Orbs -->
+        <div class="ambient-orb w-[600px] h-[600px] bg-vault-primary/20 top-[-200px] left-[-100px] animate-float"></div>
+        <div class="ambient-orb w-[500px] h-[500px] bg-vault-secondary/20 bottom-[-150px] right-[-100px] animate-float-delayed"></div>
+        
+        <!-- Subtle Interactive Core (Decorative) -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-tr from-vault-primary/5 to-vault-secondary/5 rounded-full filter blur-[100px] animate-spin-slow"></div>
+    </div>
+
+    <!-- Login Container -->
+    <main class="w-full max-w-md px-6 relative z-10 entrance-anim">
+        
+        <!-- Glass Card -->
+        <div class="glass-panel rounded-3xl p-8 sm:p-10 relative overflow-hidden" id="loginCard">
+            
+            <!-- Internal Border Glow -->
+            <div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-vault-primary/50 to-transparent"></div>
+
+            <!-- Header / Branding -->
+            <div class="flex flex-col items-center text-center mb-10 relative z-10">
+                <div class="w-16 h-16 rounded-2xl bg-[#0f172a] border border-white/10 flex items-center justify-center mb-5 shadow-[0_0_30px_rgba(0,229,255,0.2)] relative group">
+                    <div class="absolute inset-0 bg-gradient-to-br from-vault-primary/20 to-vault-secondary/20 rounded-2xl"></div>
+                    <i class="ph-fill ph-shield-check text-vault-primary text-3xl z-10 drop-shadow-[0_0_10px_rgba(0,229,255,0.8)]"></i>
+                </div>
+                <h1 class="text-2xl font-display font-bold tracking-tight text-white mb-1">
+                    Prompt<span class="text-gradient">Vault</span> AI
+                </h1>
+                <p class="text-sm font-medium text-gray-400 tracking-wide uppercase letter-spacing-2">Secure Admin Access</p>
+            </div>
+
+            <!-- Error Notification (Hidden by default) -->
+            <div id="errorNotification" class="error-notification bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 flex items-center gap-3 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+                <i class="ph-fill ph-warning-circle text-red-400 text-xl flex-shrink-0"></i>
+                <p class="text-sm text-red-200 font-medium leading-snug" id="errorMessage">Invalid email or password</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="space-y-5 relative z-10" novalidate>
+                
+                <!-- Email Field -->
+                <div class="space-y-1.5">
+                    <label for="email" class="text-xs font-semibold text-gray-400 ml-1">Admin Email</label>
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i class="ph-duotone ph-envelope-simple text-xl text-gray-500 group-focus-within:text-vault-primary transition-colors"></i>
+                        </div>
+                        <input type="email" id="email" required autocomplete="email" placeholder="admin@promptvault.ai"
+                            class="block w-full pl-11 pr-4 py-3.5 bg-[#0a0f1a]/80 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-vault-primary/50 focus:ring-1 focus:ring-vault-primary/50 transition-all text-sm shadow-inner">
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div class="space-y-1.5">
+                    <label for="password" class="text-xs font-semibold text-gray-400 ml-1">Password</label>
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i class="ph-duotone ph-lock-key text-xl text-gray-500 group-focus-within:text-vault-primary transition-colors"></i>
+                        </div>
+                        <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••••••"
+                            class="block w-full pl-11 pr-12 py-3.5 bg-[#0a0f1a]/80 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-vault-primary/50 focus:ring-1 focus:ring-vault-primary/50 transition-all text-sm shadow-inner font-mono tracking-widest">
+                        
+                        <!-- Toggle Password Visibility -->
+                        <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-white transition-colors focus:outline-none">
+                            <i class="ph-fill ph-eye text-lg" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="pt-4">
+                    <button type="submit" id="submitBtn" 
+                        class="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-xl shadow-[0_0_20px_rgba(0,229,255,0.3)] text-sm font-bold text-black bg-gradient-to-r from-vault-primary to-[#00b3cc] hover:from-[#00cce6] hover:to-[#0099b3] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#010308] focus:ring-vault-primary transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0">
+                        <span class="btn-text">Login to Dashboard</span>
+                        <div class="loader"></div>
+                    </button>
+                </div>
+
+            </form>
+            
+            <!-- Fatal System Error (If Firebase fails to load entirely) -->
+            <div id="systemError" class="hidden absolute inset-0 bg-[#0f172a]/95 backdrop-blur-xl z-50 flex flex-col items-center justify-center text-center px-6">
+                <i class="ph-duotone ph-plugs-connected text-5xl text-red-500 mb-4"></i>
+                <h3 class="text-lg font-bold text-white mb-2">System Initialisation Failed</h3>
+                <p class="text-sm text-gray-400">Unable to establish a secure connection. Please contact engineering support.</p>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Application Logic -->
+    <script type="module">
+        // ------------------------------------------------------------------------
+        // 1. INITIALIZATION & FIREBASE IMPORTS
+        // ------------------------------------------------------------------------
+        let auth, signInWithEmailAndPassword, onAuthStateChanged;
+
+        const DOM = {
+            form: document.getElementById('loginForm'),
+            email: document.getElementById('email'),
+            password: document.getElementById('password'),
+            btn: document.getElementById('submitBtn'),
+            toggleBtn: document.getElementById('togglePassword'),
+            eyeIcon: document.getElementById('eyeIcon'),
+            card: document.getElementById('loginCard'),
+            errorBox: document.getElementById('errorNotification'),
+            errorMsg: document.getElementById('errorMessage'),
+            systemError: document.getElementById('systemError')
+        };
+
+        async function initializeAuth() {
+            try {
+                // Import from standard Firebase NPM packages (resolved via importmap)
+                const fbAuth = await import('firebase/auth');
+                signInWithEmailAndPassword = fbAuth.signInWithEmailAndPassword;
+                onAuthStateChanged = fbAuth.onAuthStateChanged;
+
+                // Import customized local configuration
+                const localFirebase = await import('./src/firebase.js');
+                auth = localFirebase.auth;
+
+                if (!auth) throw new Error("Auth instance not found in src/firebase.js");
+
+                // Security Flow: If already logged in, push straight to dashboard
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        window.location.href = 'admin.html';
+                    }
+                });
+
+            } catch (error) {
+                console.error("Auth System Error:", error);
+                DOM.systemError.classList.remove('hidden');
+            }
+        }
+
+        // ------------------------------------------------------------------------
+        // 2. UI INTERACTION LOGIC
+        // ------------------------------------------------------------------------
+        
+        // Password Visibility Toggle
+        DOM.toggleBtn.addEventListener('click', () => {
+            const type = DOM.password.getAttribute('type') === 'password' ? 'text' : 'password';
+            DOM.password.setAttribute('type', type);
+            
+            if (type === 'text') {
+                DOM.eyeIcon.classList.replace('ph-eye', 'ph-eye-slash');
+                DOM.eyeIcon.classList.add('text-vault-primary');
+            } else {
+                DOM.eyeIcon.classList.replace('ph-eye-slash', 'ph-eye');
+                DOM.eyeIcon.classList.remove('text-vault-primary');
+            }
+        });
+
+        // Clear errors on input
+        const clearErrors = () => {
+            DOM.errorBox.classList.remove('active');
+            DOM.card.classList.remove('error-shake');
+        };
+        
+        DOM.email.addEventListener('input', clearErrors);
+        DOM.password.addEventListener('input', clearErrors);
+
+        // Form Submit Handler
+        DOM.form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearErrors();
+            
+            const emailVal = DOM.email.value.trim();
+            const passVal = DOM.password.value;
+
+            // Basic frontend validation before hitting Firebase
+            if (!emailVal || !passVal) {
+                showError("Please fill in all security fields.");
+                return;
+            }
+
+            // Set UI to loading state
+            DOM.btn.classList.add('btn-loading');
+            DOM.btn.disabled = true;
+            DOM.email.disabled = true;
+            DOM.password.disabled = true;
+
+            try {
+                // Attempt Firebase Authentication
+                await signInWithEmailAndPassword(auth, emailVal, passVal);
+                
+                // On Success: The onAuthStateChanged listener will automatically redirect,
+                // but we add a fallback redirect here just in case.
+                window.location.href = 'admin.html';
+                
+            } catch (error) {
+                // Reset UI State
+                DOM.btn.classList.remove('btn-loading');
+                DOM.btn.disabled = false;
+                DOM.email.disabled = false;
+                DOM.password.disabled = false;
+                DOM.password.value = ''; // Clear password for security
+                DOM.password.focus();
+
+                // Advanced Error Handling (Masking technical details from UI)
+                console.warn("Login Failed:", error.code); // Logged for devs, hidden from UI
+                
+                // Generic error message constraint strictly applied
+                let displayMessage = "Invalid email or password"; 
+                
+                // Network specific handling
+                if (error.code === 'auth/network-request-failed') {
+                    displayMessage = "Network connection failed. Please check your internet.";
+                } else if (error.code === 'auth/too-many-requests') {
+                    displayMessage = "Too many failed attempts. Please try again later.";
+                }
+
+                showError(displayMessage);
+            }
+        });
+
+        function showError(message) {
+            DOM.errorMsg.textContent = message;
+            DOM.errorBox.classList.add('active');
+            
+            // Trigger CSS Kinetic Shake
+            DOM.card.classList.remove('error-shake');
+            void DOM.card.offsetWidth; // Force DOM reflow to restart animation
+            DOM.card.classList.add('error-shake');
+        }
+
+        // Boot
+        document.addEventListener('DOMContentLoaded', initializeAuth);
+
+    </script>
+</body>
+</html>
